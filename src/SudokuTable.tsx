@@ -49,19 +49,24 @@ function SudokuTablePage() {
 
   const createOnChangeHandler = (x: number, y: number) => {
     return (event: React.ChangeEvent<HTMLInputElement>) => {
+      console.log(`event`, event);
       const value = event.target.value;
       if (!value) {
+        const copied = copyTable(table)
+        copied[x][y] = null;
+        setTable(copied);
         return;
       }
       const num = parseInt(value);
       if (isNaN(num)) {
-        // TODO:
+        // TODO: validation and error report
         return;
       }
       const copied = copyTable(table)
       copied[x][y] = num;
       if (!isValid(copied)) {
-
+        // TODO: error report
+        console.error("not valid table")
       }
       setTable(copied);
       console.log(render(copied));
