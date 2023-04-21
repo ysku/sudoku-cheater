@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
-import { Box, Button, CircularProgress, Container, Grid } from "@mui/material"
-import { Table, N, fromValues, renderCell, bruteForce} from "./lib/sudoku";
+import { Box, Button, CircularProgress, Container, Grid, TextField } from "@mui/material"
+import { Table, N, fromValues, renderCell, bruteForce, copyTable, render, isValid} from "./lib/sudoku";
 
 function Loading() {
   return (
@@ -8,26 +8,6 @@ function Loading() {
       <CircularProgress />
     </Box>
   );
-}
-
-function SudokuTable({
-  table
-}: {
-  table: Table
-}) {
-  return (
-    <Box sx={{ flexGrow: 1 }}>
-      <Grid container rowSpacing={1} spacing={1} columns={9}>
-        {table.map((row, rowIdx) => row.map((cell, cellIdx) => (
-          <Grid item xs={1} key={`${rowIdx}-${cellIdx}`} style={{ border: "1px solid black" }}>
-            <div style={{ textAlign: "center", fontSize: "48px" }}>
-              {renderCell(cell)}
-            </div>
-          </Grid>
-        )))}
-      </Grid>
-    </Box>
-  )
 }
 
 function SudokuTablePage() {
@@ -67,10 +47,41 @@ function SudokuTablePage() {
     setTable(fromValues(initialValues));
   }
 
+  const createOnChangeHandler = (x: number, y: number) => {
+    return (event: React.ChangeEvent<HTMLInputElement>) => {
+      const value = event.target.value;
+      if (!value) {
+        return;
+      }
+      const num = parseInt(value);
+      if (isNaN(num)) {
+        // TODO:
+        return;
+      }
+      const copied = copyTable(table)
+      copied[x][y] = num;
+      if (!isValid(copied)) {
+
+      }
+      setTable(copied);
+      console.log(render(copied));
+    }
+  }
+
   return (
     <Container>
       {processing && <Loading/>}
-      <SudokuTable table={table} />
+      <Box width="100%" textAlign="center" sx={{ flexGrow: 1 }}>
+        <Grid container rowSpacing={1} spacing={1} columns={9}>
+          {table.map((row, rowIdx) => row.map((cell, cellIdx) => (
+            <Grid item xs={1} key={`${rowIdx}-${cellIdx}`} style={{ border: "1px solid black" }}>
+              <div style={{ textAlign: "center", fontSize: "48px" }}>
+                <TextField value={renderCell(cell)} onChange={createOnChangeHandler(rowIdx, cellIdx)} />
+              </div>
+            </Grid>
+          )))}
+        </Grid>
+      </Box>
       {elapsedSec && (
         <Box width="100%" textAlign="center" sx={{ mt: 3 }}>
           finished in {elapsedSec} seconds
