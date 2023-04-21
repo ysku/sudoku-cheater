@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Box, Button, CircularProgress, Container, Grid, TextField } from "@mui/material"
+import { Box, Button, CircularProgress, Container, Grid } from "@mui/material"
 import { Table, N, fromValues, renderCell, bruteForce, copyTable, render, isValid} from "./lib/sudoku";
 
 function Loading() {
@@ -76,7 +76,18 @@ function SudokuTablePage() {
           {table.map((row, rowIdx) => row.map((cell, cellIdx) => (
             <Grid item xs={1} key={`${rowIdx}-${cellIdx}`} style={{ border: "1px solid black" }}>
               <div style={{ textAlign: "center", fontSize: "48px" }}>
-                <TextField value={renderCell(cell)} onChange={createOnChangeHandler(rowIdx, cellIdx)} />
+                <input
+                  style={{
+                    width: "1.5em",
+                    height: "2em",
+                    position: "relative",
+                    top: "-1em",
+                    left: "-0.5em",
+                    paddingLeft: "0.5em"
+                  }}
+                  value={renderCell(cell)}
+                  onChange={createOnChangeHandler(rowIdx, cellIdx)}
+                />
               </div>
             </Grid>
           )))}
