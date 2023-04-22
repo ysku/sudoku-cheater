@@ -1,6 +1,6 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import { Backdrop, Box, Button, CircularProgress, Container, Grid } from "@mui/material"
-import { Table, N, fromValues, renderCell, copyTable, render, isCompleted, isValid } from "./lib/sudoku";
+import { Table, N, fromValues, renderCell, copyTable, render, isCompleted, Position, canEnter } from "./lib/sudoku";
 import { algorithms, Request, Response } from './lib/types';
 
 function Loading({ open }: { open: boolean }) {
@@ -18,6 +18,10 @@ const defaultMessages = [
   `please press start to let this solve this pazzle.`
 ]
 
+type StateError = {
+  violations: Array<Position>;
+}
+
 function SudokuTablePage() {
   const initialTable = fromValues([
     [6, 4, N, N, N, 7, 8, N, N],
@@ -31,6 +35,9 @@ function SudokuTablePage() {
     [N, 8, N, N, 5, N, 6, N, N],
   ])
   const [table, setTable] = useState<Table>(initialTable);
+  const [stateError, setStateError] = useState<StateError>({
+    violations: [],
+  });
   const [processing, setProcessing] = useState<boolean>(false);
   const [messages, setMessages] = useState<Array<string>>(defaultMessages);
 
@@ -84,34 +91,56 @@ function SudokuTablePage() {
     return (event: React.ChangeEvent<HTMLInputElement>) => {
       console.log(`event`, event);
       const value = event.target.value;
-      if (!value) {
-        const copied = copyTable(table)
-        copied[x][y] = null;
-        setTable(copied);
-        return;
-      }
-      const num = parseInt(value);
-      if (isNaN(num)) {
-        // TODO: validation and error report
-        return;
+      let num: number | null = null;
+      if (value) {
+        num = parseInt(value);
+        if (isNaN(num)) {
+          num = null;
+        }
       }
       const copied = copyTable(table)
       copied[x][y] = num;
-      if (!isValid(copied)) {
-        // TODO: error report
-        console.error("not valid table")
-      }
       setTable(copied);
+      const violations = num !== null ? canEnter(table, [x, y], num) : [];
+      setStateError({
+        violations,
+      })
       console.log(render(copied));
     }
   }
+
+  const bgColor = (pos: Position, violations: Array<Position>): string | undefined => {
+    const [x, y] = pos;
+    for (const violation of violations) {
+      const [vx, vy] = violation;
+      if (x === vx && y === vy) {
+        return "#fa908a";
+      }
+    }
+    return;
+  }
+
+  const color = (original: Table, pos: Position): string => {
+    const [x, y] = pos;
+    return original[x][y] !== null ? "#020310" : "#48b9a8"
+  }
+
+  console.log(stateError);
 
   return (
     <Container>
       <Box width="100%" textAlign="center" sx={{ flexGrow: 1 }}>
         <Grid container rowSpacing={1} spacing={1} columns={9}>
           {table.map((row, rowIdx) => row.map((cell, cellIdx) => (
-            <Grid item xs={1} key={`${rowIdx}-${cellIdx}`} style={{ border: "1px solid black" }}>
+            <Grid
+              item
+              xs={1}
+              key={`${rowIdx}-${cellIdx}`}
+              style={{
+                border: "1px solid black",
+                backgroundColor: bgColor([rowIdx, cellIdx], stateError.violations),
+              }}
+            >
               <div style={{ textAlign: "center", fontSize: "48px" }}>
                 <input
                   style={{
@@ -121,9 +150,10 @@ function SudokuTablePage() {
                     top: "-1em",
                     left: "-0.5em",
                     paddingLeft: "0.5em",
-                    color: initialTable[rowIdx][cellIdx] !== null ? "#020310" : "#48b9a8",
+                    color: color(initialTable, [rowIdx, cellIdx]),
                     fontSize: "14px",
                     border: "none",
+                    backgroundColor: bgColor([rowIdx, cellIdx], stateError.violations),
                   }}
                   value={renderCell(cell)}
                   onChange={createOnChangeHandler(rowIdx, cellIdx)}

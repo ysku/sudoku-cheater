@@ -67,6 +67,23 @@ export const isAssignable = (table: Table, pos: Position, num: number) => {
   return true;
 }
 
+export const canEnter = (table: Table, pos: Position, num: number): Array<Position> => {
+  const [x, y] = pos;
+  if (table[x][y] !== null) {
+    return [pos];
+  }
+  const notNull = (v: Position | null): v is Position => v !== null;
+  let violations: Array<Position> = []
+  violations = violations.concat(table[x].map((v, idx) => v === num ? [x, idx] as Position : null).filter(notNull));
+
+  for (let i = 0; i < 9; i++) {
+    if (table[i][y] === num) {
+      violations.push([i, y]);
+    }
+  }
+  return violations;
+}
+
 export const isBlank = (table: Table, pos: Position): boolean => {
   const [x, y] = pos;
   return table[x][y] === null;
