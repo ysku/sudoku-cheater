@@ -1,7 +1,8 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import { Backdrop, Box, Button, CircularProgress, Container, Grid } from "@mui/material"
-import { Table, N, fromValues, renderCell, copyTable, render, isCompleted, Position, canEnter } from "./lib/sudoku";
+import { Table, renderCell, copyTable, render, isCompleted, Position, canEnter } from "./lib/sudoku";
 import { algorithms, Request, Response } from './lib/types';
+import { Quiz, defaultQuizID, getRandomQuizID, selectQuiz } from './lib/quiz';
 
 function Loading({ open }: { open: boolean }) {
   return (
@@ -23,18 +24,8 @@ type StateError = {
 }
 
 function SudokuTablePage() {
-  const initialTable = fromValues([
-    [6, 4, N, N, N, 7, 8, N, N],
-    [3, N, N, 8, N, 4, N, N, 9],
-    [N, N, N, N, N, 6, 7, N, N],
-    [N, 9, N, N, N, N, N, N, 7],
-    [N, N, N, N, 7, N, N, N, 2],
-    [4, N, N, N, N, N, N, 1, N],
-    [N, 5, 3, N, N, N, 9, 4, 8],
-    [N, N, N, N, N, 1, N, N, N],
-    [N, 8, N, N, 5, N, 6, N, N],
-  ])
-  const [table, setTable] = useState<Table>(initialTable);
+  const [quiz, setQuiz] = useState<Quiz>(selectQuiz(defaultQuizID));
+  const [table, setTable] = useState<Table>(quiz.table);
   const [stateError, setStateError] = useState<StateError>({
     violations: [],
   });
@@ -83,10 +74,17 @@ function SudokuTablePage() {
 
   const handleRefreshClick = () => {
     setProcessing(true);
-    setTable(initialTable);
+    setTable(quiz.table);
     setMessages(defaultMessages);
     setMiss(0);
     setProcessing(false);
+  }
+
+  const handleNextQuizClick = () => {
+    const nextQuizID = getRandomQuizID(quiz.id);
+    const nextQuiz = selectQuiz(nextQuizID);
+    setQuiz(nextQuiz);
+    setTable(nextQuiz.table);
   }
 
   const createOnChangeHandler = (x: number, y: number) => {
@@ -155,7 +153,7 @@ function SudokuTablePage() {
                     top: "-1em",
                     left: "-0.5em",
                     paddingLeft: "0.5em",
-                    color: color(initialTable, [rowIdx, cellIdx]),
+                    color: color(quiz.table, [rowIdx, cellIdx]),
                     fontSize: "14px",
                     border: "none",
                     backgroundColor: bgColor([rowIdx, cellIdx], stateError.violations),
@@ -191,6 +189,9 @@ function SudokuTablePage() {
         )}
         <Button onClick={handleRefreshClick}>
           Refresh
+        </Button>
+        <Button onClick={handleNextQuizClick}>
+          Next Quiz
         </Button>
       </Box>
     </Container>
