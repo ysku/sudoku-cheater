@@ -1,12 +1,16 @@
-import React, { useState } from 'react';
-import { Box, Button, CircularProgress, Container, Grid } from "@mui/material"
-import { Table, N, fromValues, renderCell, bruteForce, copyTable, render, isValid} from "./lib/sudoku";
+import React, { useEffect, useMemo, useState } from 'react';
+import { Backdrop, Box, Button, CircularProgress, Container, Grid } from "@mui/material"
+import { Table, N, fromValues, renderCell, copyTable, render, isValid} from "./lib/sudoku";
+import { algorithms, Request, Response } from './lib/types';
 
-function Loading() {
+function Loading({ open }: { open: boolean }) {
   return (
-    <Box sx={{ display: 'flex' }}>
-      <CircularProgress />
-    </Box>
+    <Backdrop
+      sx={{ color: '#fff', zIndex: (theme) => theme.zIndex.drawer + 1 }}
+      open={open}
+    >
+      <CircularProgress color="inherit" />
+    </Backdrop>
   );
 }
 
@@ -23,28 +27,47 @@ function SudokuTablePage() {
     [N, 8, N, N, 5, N, 6, N, N],
   ]
   const [table, setTable] = useState<Table>(fromValues(initialValues))
-  const [done, setDone] = useState<boolean>(false);
   const [processing, setProcessing] = useState<boolean>(false);
-  const [elapsedSec, setElapsedSec] = useState<number | null>(null);
+  const [messages, setMessages] = useState<Array<string>>([]);
+
+  const algorithm: Worker = useMemo(
+    () => new Worker(new URL("./lib/algorithm.ts", import.meta.url)),
+    []
+  );
+
+  useEffect(() => {
+    if (window.Worker) {
+      algorithm.onmessage = (e: MessageEvent<string>) => {
+        console.log("algorithm.onmessage", e);
+        const response = JSON.parse(e.data) as Response;
+        setTable(response.table);
+        setMessages([
+          `finished in ${response.elapsedSec} seconds`
+        ]);
+        setProcessing(false);
+      };
+    }
+  }, [algorithm]);
 
   const handleStartClick = () => {
-    const start = performance.now();
+    const start = Date.now();
     setProcessing(true);
-    const result = bruteForce(table, [0, 0]);
-    setTable(result);
-    setElapsedSec(Math.round((performance.now() - start) / 1000));
-    setDone(true);
-    setProcessing(false);
-    console.log("completed!!");
+    algorithm.postMessage(JSON.stringify({
+      action: algorithms.bruteForce,
+      table: table,
+      startTime: start
+    } as Request));
   }
 
   const handleStopClick = () => {
-    setDone(false);
     setProcessing(false);
   }
 
   const handleRefreshClick = () => {
+    setProcessing(true);
     setTable(fromValues(initialValues));
+    setMessages([]);
+    setProcessing(false);
   }
 
   const createOnChangeHandler = (x: number, y: number) => {
@@ -75,7 +98,6 @@ function SudokuTablePage() {
 
   return (
     <Container>
-      {processing && <Loading/>}
       <Box width="100%" textAlign="center" sx={{ flexGrow: 1 }}>
         <Grid container rowSpacing={1} spacing={1} columns={9}>
           {table.map((row, rowIdx) => row.map((cell, cellIdx) => (
@@ -96,11 +118,14 @@ function SudokuTablePage() {
               </div>
             </Grid>
           )))}
+          <Loading open={processing}/>
         </Grid>
       </Box>
-      {elapsedSec && (
+      {messages && (
         <Box width="100%" textAlign="center" sx={{ mt: 3 }}>
-          finished in {elapsedSec} seconds
+          {messages.map((message, idx) => (
+            <p key={idx}>{message}</p>
+          ))}
         </Box>
       )}
       <Box width="100%" textAlign="center" sx={{ mt: 3 }}>
@@ -109,7 +134,7 @@ function SudokuTablePage() {
             Start
           </Button>
         ) : (
-          <Button onClick={handleStopClick} disabled={done}>
+          <Button onClick={handleStopClick} disabled={!processing}>
             Stop
           </Button>
         )}
