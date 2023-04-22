@@ -1,6 +1,6 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import { Backdrop, Box, Button, CircularProgress, Container, Grid } from "@mui/material"
-import { Table, N, fromValues, renderCell, copyTable, render, isValid} from "./lib/sudoku";
+import { Table, N, fromValues, renderCell, copyTable, render, isCompleted, isValid } from "./lib/sudoku";
 import { algorithms, Request, Response } from './lib/types';
 
 function Loading({ open }: { open: boolean }) {
@@ -13,6 +13,10 @@ function Loading({ open }: { open: boolean }) {
     </Backdrop>
   );
 }
+
+const defaultMessages = [
+  `please press start to let this solve this pazzle.`
+]
 
 function SudokuTablePage() {
   const initialValues = [
@@ -28,12 +32,16 @@ function SudokuTablePage() {
   ]
   const [table, setTable] = useState<Table>(fromValues(initialValues))
   const [processing, setProcessing] = useState<boolean>(false);
-  const [messages, setMessages] = useState<Array<string>>([]);
+  const [messages, setMessages] = useState<Array<string>>(defaultMessages);
 
   const algorithm: Worker = useMemo(
     () => new Worker(new URL("./lib/algorithm.ts", import.meta.url)),
     []
   );
+
+  const completed = isCompleted(table);
+
+  console.log(`completed: ${completed}`);
 
   useEffect(() => {
     if (window.Worker) {
@@ -42,7 +50,8 @@ function SudokuTablePage() {
         const response = JSON.parse(e.data) as Response;
         setTable(response.table);
         setMessages([
-          `finished in ${response.elapsedSec} seconds`
+          `finished in ${response.elapsedSec} seconds.`,
+          `please press REFRESH to try it again.`
         ]);
         setProcessing(false);
       };
@@ -66,7 +75,7 @@ function SudokuTablePage() {
   const handleRefreshClick = () => {
     setProcessing(true);
     setTable(fromValues(initialValues));
-    setMessages([]);
+    setMessages(defaultMessages);
     setProcessing(false);
   }
 
@@ -130,7 +139,7 @@ function SudokuTablePage() {
       )}
       <Box width="100%" textAlign="center" sx={{ mt: 3 }}>
         {!processing ? (
-          <Button onClick={handleStartClick} disabled={processing}>
+          <Button onClick={handleStartClick} disabled={processing || completed}>
             Start
           </Button>
         ) : (

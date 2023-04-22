@@ -116,6 +116,10 @@ export const isValid = (table: Table): boolean => {
   return isValidBlocks(table);
 }
 
+export const isCompleted = (table: Table): boolean => {
+  return isValid(table) && flatten(table).every(isNotNull);
+}
+
 export const goNext = (pos: Position): Position | null => {
   let [nextX, nextY] = pos;
   nextY++;
