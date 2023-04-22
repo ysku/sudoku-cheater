@@ -38,6 +38,7 @@ function SudokuTablePage() {
   const [stateError, setStateError] = useState<StateError>({
     violations: [],
   });
+  const [miss, setMiss] = useState<number>(0);
   const [processing, setProcessing] = useState<boolean>(false);
   const [messages, setMessages] = useState<Array<string>>(defaultMessages);
 
@@ -84,6 +85,7 @@ function SudokuTablePage() {
     setProcessing(true);
     setTable(initialTable);
     setMessages(defaultMessages);
+    setMiss(0);
     setProcessing(false);
   }
 
@@ -102,6 +104,9 @@ function SudokuTablePage() {
       copied[x][y] = num;
       setTable(copied);
       const violations = num !== null ? canEnter(table, [x, y], num) : [];
+      if (violations.length > 0) {
+        setMiss(miss + 1);
+      }
       setStateError({
         violations,
       })
@@ -163,6 +168,9 @@ function SudokuTablePage() {
           )))}
           <Loading open={processing}/>
         </Grid>
+      </Box>
+      <Box width="100%" textAlign="center" sx={{ mt: 3 }}>
+        <p>missed {miss} times</p>
       </Box>
       {messages && (
         <Box width="100%" textAlign="center" sx={{ mt: 3 }}>
