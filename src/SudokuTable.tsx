@@ -19,7 +19,7 @@ const defaultMessages = [
 ]
 
 function SudokuTablePage() {
-  const initialValues = [
+  const initialTable = fromValues([
     [6, 4, N, N, N, 7, 8, N, N],
     [3, N, N, 8, N, 4, N, N, 9],
     [N, N, N, N, N, 6, 7, N, N],
@@ -29,8 +29,8 @@ function SudokuTablePage() {
     [N, 5, 3, N, N, N, 9, 4, 8],
     [N, N, N, N, N, 1, N, N, N],
     [N, 8, N, N, 5, N, 6, N, N],
-  ]
-  const [table, setTable] = useState<Table>(fromValues(initialValues))
+  ])
+  const [table, setTable] = useState<Table>(initialTable);
   const [processing, setProcessing] = useState<boolean>(false);
   const [messages, setMessages] = useState<Array<string>>(defaultMessages);
 
@@ -48,6 +48,7 @@ function SudokuTablePage() {
       algorithm.onmessage = (e: MessageEvent<string>) => {
         console.log("algorithm.onmessage", e);
         const response = JSON.parse(e.data) as Response;
+        console.log(JSON.stringify(response.table));
         setTable(response.table);
         setMessages([
           `finished in ${response.elapsedSec} seconds.`,
@@ -74,7 +75,7 @@ function SudokuTablePage() {
 
   const handleRefreshClick = () => {
     setProcessing(true);
-    setTable(fromValues(initialValues));
+    setTable(initialTable);
     setMessages(defaultMessages);
     setProcessing(false);
   }
@@ -119,7 +120,10 @@ function SudokuTablePage() {
                     position: "relative",
                     top: "-1em",
                     left: "-0.5em",
-                    paddingLeft: "0.5em"
+                    paddingLeft: "0.5em",
+                    color: initialTable[rowIdx][cellIdx] !== null ? "#020310" : "#48b9a8",
+                    fontSize: "14px",
+                    border: "none",
                   }}
                   value={renderCell(cell)}
                   onChange={createOnChangeHandler(rowIdx, cellIdx)}
